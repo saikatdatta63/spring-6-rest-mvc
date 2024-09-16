@@ -1,7 +1,7 @@
 package guru.springframework.spring6restmvc.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.springframework.spring6restmvc.model.Customer;
+import guru.springframework.spring6restmvc.model.CustomerDTO;
 import guru.springframework.spring6restmvc.services.CustomerService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -13,10 +13,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -42,14 +39,14 @@ class CustomerControllerTest {
     ArgumentCaptor<UUID> uuidCaptor;
 
     @Captor
-    ArgumentCaptor<Customer> customerCaptor;
+    ArgumentCaptor<CustomerDTO> customerCaptor;
 
     @Test
     void listCustomers() throws Exception {
-        Customer cust1 = Customer.builder()
+        CustomerDTO cust1 = CustomerDTO.builder()
                 .customerName("John Doe")
                 .build();
-        Customer cust2 = Customer.builder()
+        CustomerDTO cust2 = CustomerDTO.builder()
                 .customerName("Saikat")
                 .build();
         given(customerService.listCustomers()).willReturn(List.of(cust1, cust2));
@@ -62,11 +59,11 @@ class CustomerControllerTest {
     @Test
     void getCustomerById() throws Exception {
         UUID id = UUID.randomUUID();
-        Customer customer = Customer.builder()
+        CustomerDTO customer = CustomerDTO.builder()
                 .id(id)
                 .customerName("Test")
                 .build();
-        given(customerService.getCustomerById(id)).willReturn(customer);
+        given(customerService.getCustomerById(id)).willReturn(Optional.of(customer));
         mockMvc.perform(get("/api/v1/customer/" + id).accept(MediaType.APPLICATION_JSON))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -76,7 +73,7 @@ class CustomerControllerTest {
 
     @Test
     void createCustomer() throws Exception {
-        Customer cust = Customer.builder()
+        CustomerDTO cust = CustomerDTO.builder()
                 .customerName("Test")
                 .version(1)
                 .build();
@@ -94,7 +91,7 @@ class CustomerControllerTest {
     @Test
     void updateCustomer() {
         UUID id = UUID.randomUUID();
-        Customer cust = Customer.builder()
+        CustomerDTO cust = CustomerDTO.builder()
                 .customerName("Updated")
                 .version(1)
                 .build();
@@ -104,7 +101,7 @@ class CustomerControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(cust)))
                 .andExpect(status().isNoContent());
-        verify(customerService).updateCustomer(uuidCaptor.capture(), any(Customer.class));
+        verify(customerService).updateCustomer(uuidCaptor.capture(), any(CustomerDTO.class));
         assertThat(uuidCaptor.getValue()).isEqualTo(id);
     }
 
@@ -129,5 +126,13 @@ class CustomerControllerTest {
         verify(customerService).patchCustomer(uuidCaptor.capture(), customerCaptor.capture());
         assertThat(uuidCaptor.getValue()).isEqualTo(id);
         assertThat(customerCaptor.getValue().getCustomerName()).isEqualTo(custMap.get("customerName"));
+    }
+
+    @Test
+    void getCustomerByIdNotFound() throws Exception {
+        given(customerService.getCustomerById(any(UUID.class)))
+                .willReturn(Optional.empty());
+        mockMvc.perform(get("/api/v1/customer/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound());
     }
 }
