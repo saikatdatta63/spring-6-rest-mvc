@@ -55,6 +55,8 @@ class BeerControllerIT {
        assertThrows(NotFoundException.class, () -> beerController.getBeerById(UUID.randomUUID()));
     }
 
+    @Transactional
+    @Rollback
     @Test
     void testSaveNewBeer() {
         BeerDTO beerDTO = BeerDTO.builder()
@@ -65,10 +67,7 @@ class BeerControllerIT {
         assertNotNull(beerResponse.getHeaders().getLocation());
 
         String[] locationUUID = beerResponse.getHeaders().getLocation().getPath().split("/");
-        System.out.println(locationUUID[locationUUID.length-1].length());
-        UUID savedId = UUID.fromString(locationUUID[locationUUID.length-1]);
-
-
+        UUID savedId = UUID.fromString(locationUUID[4]);
         Optional<Beer> savedBeer = beerRepository.findById(savedId);
         assertThat(savedBeer).isNotEmpty();
     }
