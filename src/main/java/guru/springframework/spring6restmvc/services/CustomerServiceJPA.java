@@ -1,12 +1,16 @@
 package guru.springframework.spring6restmvc.services;
 
+import guru.springframework.spring6restmvc.entities.Customer;
+import guru.springframework.spring6restmvc.exception.NotFoundException;
 import guru.springframework.spring6restmvc.mappers.CustomerMapper;
 import guru.springframework.spring6restmvc.model.CustomerDTO;
 import guru.springframework.spring6restmvc.repositories.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,21 +39,38 @@ public class CustomerServiceJPA implements CustomerService {
 
     @Override
     public CustomerDTO createCustomer(CustomerDTO customer) {
-        return null;
+        Customer savedCust = customerRepository.save(customerMapper.customerDtoToCustomer(customer));
+        return customerMapper.customerToCustomerDTO(savedCust);
     }
 
     @Override
     public void updateCustomer(UUID id, CustomerDTO customer) {
-
+        customerRepository.findById(id).ifPresentOrElse(foundCust -> {
+            foundCust.setCustomerName(customer.getCustomerName());
+            foundCust.setLastModifiedDate(LocalDateTime.now());
+            customerRepository.save(foundCust);
+        }, () -> {
+            throw new NotFoundException("Customer not found");
+        });
     }
 
     @Override
     public void deleteCustomer(UUID id) {
-
+        customerRepository.findById(id).ifPresentOrElse(customerRepository::delete, () -> {
+            throw new NotFoundException("Customer not found");
+        });
     }
 
     @Override
     public void patchCustomer(UUID id, CustomerDTO customer) {
-
+        customerRepository.findById(id).ifPresentOrElse(foundCust -> {
+            if(StringUtils.hasText(customer.getCustomerName())) {
+                foundCust.setCustomerName(customer.getCustomerName());
+            }
+            foundCust.setLastModifiedDate(LocalDateTime.now());
+            customerRepository.save(foundCust);
+        }, () -> {
+            throw new NotFoundException("Customer not found");
+        });
     }
 }

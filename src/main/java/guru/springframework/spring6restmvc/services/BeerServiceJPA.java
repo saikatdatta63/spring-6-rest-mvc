@@ -1,13 +1,16 @@
 package guru.springframework.spring6restmvc.services;
 
 import guru.springframework.spring6restmvc.entities.Beer;
+import guru.springframework.spring6restmvc.exception.NotFoundException;
 import guru.springframework.spring6restmvc.mappers.BeerMapper;
 import guru.springframework.spring6restmvc.model.BeerDTO;
 import guru.springframework.spring6restmvc.repositories.BeerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,16 +47,51 @@ public class BeerServiceJPA implements BeerService {
 
     @Override
     public void updateBeerById(UUID beerId, BeerDTO beer) {
-
+        Optional<Beer> existingBeer = beerRepository.findById(beerId);
+        if (existingBeer.isPresent()) {
+            Beer beerToUpdate = existingBeer.get();
+            beerToUpdate.setBeerName(beer.getBeerName());
+            beerToUpdate.setBeerStyle(beer.getBeerStyle());
+            beerToUpdate.setUpc(beer.getUpc());
+            beerToUpdate.setPrice(beer.getPrice());
+            beerToUpdate.setQuantityOnHand(beer.getQuantityOnHand());
+            beerToUpdate.setUpdateDate(LocalDateTime.now());
+            beerRepository.save(beerToUpdate);
+        } else {
+            throw new NotFoundException("Beer not found!");
+        }
     }
 
     @Override
     public void deleteById(UUID beerId) {
-
+        beerRepository.findById(beerId).ifPresentOrElse(beerRepository::delete,
+                () -> {
+                    throw new NotFoundException("Beer not found!");
+                });
     }
 
     @Override
     public void patchBeerById(UUID beerId, BeerDTO beer) {
-
+        beerRepository.findById(beerId).ifPresentOrElse(foundBeer -> {
+            if (StringUtils.hasText(beer.getBeerName())) {
+                foundBeer.setBeerName(beer.getBeerName());
+            }
+            if(StringUtils.hasText(beer.getUpc())) {
+                foundBeer.setUpc(beer.getUpc());
+            }
+            if(null != beer.getBeerStyle()) {
+                foundBeer.setBeerStyle(beer.getBeerStyle());
+            }
+            if(null != beer.getPrice()) {
+                foundBeer.setPrice(beer.getPrice());
+            }
+            if(null != beer.getQuantityOnHand()) {
+                foundBeer.setQuantityOnHand(beer.getQuantityOnHand());
+            }
+            foundBeer.setUpdateDate(LocalDateTime.now());
+            beerRepository.save(foundBeer);
+        }, () -> {
+            throw new NotFoundException("Beer not found!");
+        });
     }
 }
