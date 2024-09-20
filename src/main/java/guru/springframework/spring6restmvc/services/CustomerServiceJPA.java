@@ -39,6 +39,7 @@ public class CustomerServiceJPA implements CustomerService {
 
     @Override
     public CustomerDTO createCustomer(CustomerDTO customer) {
+        customer.setCreatedDate(LocalDateTime.now());
         Customer savedCust = customerRepository.save(customerMapper.customerDtoToCustomer(customer));
         return customerMapper.customerToCustomerDTO(savedCust);
     }

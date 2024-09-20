@@ -2,12 +2,14 @@ package guru.springframework.spring6restmvc.controller;
 
 import guru.springframework.spring6restmvc.exception.NotFoundException;
 import guru.springframework.spring6restmvc.model.BeerDTO;
+import guru.springframework.spring6restmvc.model.BeerStyle;
 import guru.springframework.spring6restmvc.services.BeerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +25,7 @@ public class BeerController {
     private final BeerService beerService;
 
     @PostMapping(BEER_PATH)
-    public ResponseEntity createBeer(@RequestBody BeerDTO beer) {
+    public ResponseEntity createBeer(@Validated @RequestBody BeerDTO beer) {
 
         BeerDTO savedBeer = beerService.createNewBeer(beer);
         HttpHeaders headers = new HttpHeaders();
@@ -33,14 +35,17 @@ public class BeerController {
     }
 
     @PutMapping(BEER_PATH_PARAM)
-    public ResponseEntity updateBeerById(@PathVariable("beerId") UUID beerId, @RequestBody BeerDTO beer) {
+    public ResponseEntity updateBeerById(@PathVariable("beerId") UUID beerId,
+                                         @RequestBody @Validated BeerDTO beer) {
         beerService.updateBeerById(beerId, beer);
         return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping(BEER_PATH)
-    public List<BeerDTO> listBeers() {
-        return beerService.listBeers();
+    public List<BeerDTO> listBeers(@RequestParam(required = false) String beerName,
+                                   @RequestParam(required = false) BeerStyle beerStyle,
+                                   @RequestParam(required = false) Boolean showInventory) {
+        return beerService.listBeers(beerName, beerStyle, showInventory);
     }
 
     @GetMapping(BEER_PATH_PARAM)
